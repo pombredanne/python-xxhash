@@ -4,8 +4,7 @@
 from setuptools import setup, Extension
 import os
 
-VERSION = "0.3.0"
-XXHASH_VERSION = "r37"
+VERSION = "0.5.0"
 
 if os.name == 'posix':
     extra_compile_args = [
@@ -22,7 +21,6 @@ else:
 
 define_macros = [
     ('VERSION', VERSION),
-    ('XXHASH_VERSION', XXHASH_VERSION)
 ]
 
 setup(
@@ -33,6 +31,7 @@ setup(
     author='Yue Du',
     author_email='ifduyue@gmail.com',
     url='https://github.com/ifduyue/python-xxhash',
+    license='BSD',
     ext_modules=[
         Extension('xxhash', [
             'python-xxhash.c',
@@ -55,6 +54,7 @@ setup(
         'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
 )

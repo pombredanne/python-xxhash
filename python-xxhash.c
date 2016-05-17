@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Yue Du
+ * Copyright (c) 2014-2016, Yue Du
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -35,6 +35,7 @@
 #define TOSTRING(x) #x
 #define VALUE_TO_STRING(x) TOSTRING(x)
 
+#define XXHASH_VERSION XXH_VERSION_MAJOR.XXH_VERSION_MINOR.XXH_VERSION_RELEASE
 #define XXH32_DIGESTSIZE 4
 #define XXH32_BLOCKSIZE 16
 #define XXH64_DIGESTSIZE 8
@@ -84,7 +85,7 @@ static void ull2bytes(unsigned long long in, char *out)
 typedef struct {
     PyObject_HEAD
     /* Type-specific fields go here. */
-    XXH32_state_t xxhash_state[1];
+    XXH32_stateBody_t xxhash_state[1];
     unsigned int seed;
 } PYXXH32Object;
 
@@ -120,10 +121,10 @@ static int PYXXH32_init(PYXXH32Object *self, PyObject *args, PyObject *kwargs)
     }
 
     self->seed = seed;
-    XXH32_reset(self->xxhash_state, seed);
+    XXH32_reset((XXH32_state_t *)self->xxhash_state, seed);
 
     if (s) {
-        XXH32_update(self->xxhash_state, s, ns);
+        XXH32_update((XXH32_state_t *)self->xxhash_state, s, ns);
     }
 
     return 0;
@@ -144,7 +145,7 @@ static PyObject *PYXXH32_update(PYXXH32Object *self, PyObject *args)
         return NULL;
     }
 
-    XXH32_update(self->xxhash_state, s, ns);
+    XXH32_update((XXH32_state_t *)self->xxhash_state, s, ns);
 
     Py_RETURN_NONE;
 }
@@ -184,7 +185,7 @@ static PyObject *PYXXH32_digest(PYXXH32Object *self)
         return NULL;
     }
 
-    digest = XXH32_digest(self->xxhash_state);
+    digest = XXH32_digest((XXH32_state_t *)self->xxhash_state);
     u2bytes(digest, retbuf);
 
     return retval;
@@ -228,7 +229,7 @@ static PyObject *PYXXH32_hexdigest(PYXXH32Object *self)
         return NULL;
     }
 
-    intdigest = XXH32_digest(self->xxhash_state);
+    intdigest = XXH32_digest((XXH32_state_t *)self->xxhash_state);
     u2bytes(intdigest, digest);
 
     for (i = j = 0; i < XXH32_DIGESTSIZE; i++) {
@@ -246,13 +247,13 @@ static PyObject *PYXXH32_hexdigest(PYXXH32Object *self)
 
 PyDoc_STRVAR(
     PYXXH32_intdigest_doc,
-    "hexdigest() -> int\n\n"
+    "intdigest() -> int\n\n"
     "Like digest(), but returns the digest as an integer, which is the integer\n"
     "returned by xxhash C API");
 
 static PyObject *PYXXH32_intdigest(PYXXH32Object *self)
 {
-    unsigned int digest = XXH32_digest(self->xxhash_state);
+    unsigned int digest = XXH32_digest((XXH32_state_t *)self->xxhash_state);
     return Py_BuildValue("I", digest);
 }
 
@@ -275,12 +276,24 @@ static PyObject *PYXXH32_copy(PYXXH32Object *self)
     return (PyObject *)p;
 }
 
+PyDoc_STRVAR(
+    PYXXH32_reset_doc,
+    "reset()\n\n"
+    "Reset state.");
+
+static PyObject *PYXXH32_reset(PYXXH32Object *self)
+{
+    XXH32_reset((XXH32_state_t *)self->xxhash_state, self->seed);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef PYXXH32_methods[] = {
     {"update", (PyCFunction)PYXXH32_update, METH_VARARGS, PYXXH32_update_doc},
     {"digest", (PyCFunction)PYXXH32_digest, METH_NOARGS, PYXXH32_digest_doc},
     {"hexdigest", (PyCFunction)PYXXH32_hexdigest, METH_NOARGS, PYXXH32_hexdigest_doc},
     {"intdigest", (PyCFunction)PYXXH32_intdigest, METH_NOARGS, PYXXH32_intdigest_doc},
     {"copy", (PyCFunction)PYXXH32_copy, METH_NOARGS, PYXXH32_copy_doc},
+    {"reset", (PyCFunction)PYXXH32_reset, METH_NOARGS, PYXXH32_reset_doc},
     {NULL, NULL, 0, NULL}
 };
 
@@ -360,7 +373,7 @@ PyDoc_STRVAR(
 
 static PyTypeObject PYXXH32Type = {
 #if PY_MAJOR_VERSION >= 3
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
 #else
     PyObject_HEAD_INIT(NULL)
     0,                             /* ob_size */
@@ -410,7 +423,7 @@ static PyTypeObject PYXXH32Type = {
 typedef struct {
     PyObject_HEAD
     /* Type-specific fields go here. */
-    XXH64_state_t xxhash_state[1];
+    XXH64_stateBody_t xxhash_state[1];
     unsigned long long seed;
 } PYXXH64Object;
 
@@ -444,10 +457,10 @@ static int PYXXH64_init(PYXXH64Object *self, PyObject *args, PyObject *kwargs)
     }
 
     self->seed = seed;
-    XXH64_reset(self->xxhash_state, seed);
+    XXH64_reset((XXH64_state_t *)self->xxhash_state, seed);
 
     if (s) {
-        XXH64_update(self->xxhash_state, s, ns);
+        XXH64_update((XXH64_state_t *)self->xxhash_state, s, ns);
     }
 
     return 0;
@@ -468,7 +481,7 @@ static PyObject *PYXXH64_update(PYXXH64Object *self, PyObject *args)
         return NULL;
     }
 
-    XXH64_update(self->xxhash_state, s, ns);
+    XXH64_update((XXH64_state_t *)self->xxhash_state, s, ns);
 
     Py_RETURN_NONE;
 }
@@ -507,7 +520,7 @@ static PyObject *PYXXH64_digest(PYXXH64Object *self)
         return NULL;
     }
 
-    digest = XXH64_digest(self->xxhash_state);
+    digest = XXH64_digest((XXH64_state_t *)self->xxhash_state);
     ull2bytes(digest, retbuf);
 
     return retval;
@@ -551,7 +564,7 @@ static PyObject *PYXXH64_hexdigest(PYXXH64Object *self)
         return NULL;
     }
 
-    intdigest = XXH64_digest(self->xxhash_state);
+    intdigest = XXH64_digest((XXH64_state_t *)self->xxhash_state);
     ull2bytes(intdigest, digest);
 
     for (i = j = 0; i < XXH64_DIGESTSIZE; i++) {
@@ -570,13 +583,13 @@ static PyObject *PYXXH64_hexdigest(PYXXH64Object *self)
 
 PyDoc_STRVAR(
     PYXXH64_intdigest_doc,
-    "hexdigest() -> int\n\n"
+    "intdigest() -> int\n\n"
     "Like digest(), but returns the digest as an integer, which is the integer\n"
     "returned by xxhash C API");
 
 static PyObject *PYXXH64_intdigest(PYXXH64Object *self)
 {
-    unsigned long long digest = XXH64_digest(self->xxhash_state);
+    unsigned long long digest = XXH64_digest((XXH64_state_t *)self->xxhash_state);
     return Py_BuildValue("K", digest);
 }
 
@@ -599,12 +612,24 @@ static PyObject *PYXXH64_copy(PYXXH64Object *self)
     return (PyObject *)p;
 }
 
+PyDoc_STRVAR(
+    PYXXH64_reset_doc,
+    "reset()\n\n"
+    "Reset state.");
+
+static PyObject *PYXXH64_reset(PYXXH64Object *self)
+{
+    XXH64_reset((XXH64_state_t *)self->xxhash_state, self->seed);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef PYXXH64_methods[] = {
     {"update", (PyCFunction)PYXXH64_update, METH_VARARGS, PYXXH64_update_doc},
     {"digest", (PyCFunction)PYXXH64_digest, METH_NOARGS, PYXXH64_digest_doc},
     {"hexdigest", (PyCFunction)PYXXH64_hexdigest, METH_NOARGS, PYXXH64_hexdigest_doc},
     {"intdigest", (PyCFunction)PYXXH64_intdigest, METH_NOARGS, PYXXH64_intdigest_doc},
     {"copy", (PyCFunction)PYXXH64_copy, METH_NOARGS, PYXXH64_copy_doc},
+    {"reset", (PyCFunction)PYXXH64_reset, METH_NOARGS, PYXXH64_reset_doc},
     {NULL, NULL, 0, NULL}
 };
 
@@ -684,7 +709,7 @@ PyDoc_STRVAR(
 
 static PyTypeObject PYXXH64Type = {
 #if PY_MAJOR_VERSION >= 3
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
 #else
     PyObject_HEAD_INIT(NULL)
     0,                             /* ob_size */
